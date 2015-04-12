@@ -44,6 +44,11 @@ type
     property Contacts: TList read FContacts write SetContacts;
   end;
 
+const
+  ContactKindNames: array [TContactKind] of string = (
+    'Phone', 'Email'
+  );
+
 implementation
 
 uses

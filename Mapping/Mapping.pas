@@ -168,6 +168,18 @@ begin
       Break;
     end;
   end;
+  if Result <> nil then
+    Exit;
+
+  for I := 0 to MapperCount - 1 do
+  begin
+    Mapper := Mappers[I];
+    if (Mapper.SourceClass = ASourceClass) and ATargetClass.InheritsFrom(Mapper.TargetClass) then
+    begin
+      Result := Mapper;
+      Break;
+    end;
+  end;
 end;
 
 function TMapperManager.Map(ASource: TObject; ATargetClass: TClass): TObject;
