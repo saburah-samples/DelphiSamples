@@ -119,7 +119,6 @@ end;
 
 procedure StreamListMapperHandler(ASource: TList; ATarget: TStream);
 var
-  Data: string;
   I: Integer;
   Item: TObject;
 begin
@@ -135,8 +134,6 @@ begin
 end;
 
 procedure StreamAddressMapperHandler(ASource: TAddress; ATarget: TStream);
-var
-  Data: string;
 begin
   JsonWriteBeginObject(ATarget);
   JsonWriteProperty(ATarget, 'Region', ASource.Region, True);
