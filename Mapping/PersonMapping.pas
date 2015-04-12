@@ -5,12 +5,14 @@ interface
 implementation
 
 uses
+  SysUtils,
   Classes,
   Mapping,
-  PersonModule, SysUtils;
+  PersonModule;
 
 const
   CRLF = #13#10;
+
 //
 // Object To Object Mappers
 //
@@ -52,51 +54,112 @@ end;
 // Object To Stream Mappers
 //
 
+procedure JsonWriteBeginObject(ATarget: TStream);
+var
+  Data: string;
+begin
+  Data := '{';
+  ATarget.WriteBuffer(Data[1], Length(Data));
+end;
+
+procedure JsonWriteEndObject(ATarget: TStream);
+var
+  Data: string;
+begin
+  Data := '}';
+  ATarget.WriteBuffer(Data[1], Length(Data));
+end;
+
+procedure JsonWriteBeginArray(ATarget: TStream);
+var
+  Data: string;
+begin
+  Data := '[';
+  ATarget.WriteBuffer(Data[1], Length(Data));
+end;
+
+procedure JsonWriteEndArray(ATarget: TStream);
+var
+  Data: string;
+begin
+  Data := ']';
+  ATarget.WriteBuffer(Data[1], Length(Data));
+end;
+
+procedure JsonWriteSeparator(ATarget: TStream);
+var
+  Data: string;
+begin
+  Data := ',' + CRLF;
+  ATarget.WriteBuffer(Data[1], Length(Data));
+end;
+
+procedure JsonWriteProperty(ATarget: TStream; const AName, AValue: string; AHasNext: Boolean); overload;
+var
+  Data: string;
+begin
+  Data := Format('"%s": "%s"', [AName, AValue]);
+  ATarget.WriteBuffer(Data[1], Length(Data));
+
+  if AHasNext then
+    JsonWriteSeparator(ATarget);
+end;
+
+procedure JsonWriteProperty(ATarget: TStream; const AName: string; AValue: TObject; AHasNext: Boolean); overload;
+var
+  Data: string;
+begin
+  Data := Format('"%s": ', [AName]);
+  ATarget.WriteBuffer(Data[1], Length(Data));
+  MapperManager.Map(AValue, ATarget);
+
+  if AHasNext then
+    JsonWriteSeparator(ATarget);
+end;
+
 procedure StreamListMapperHandler(ASource: TList; ATarget: TStream);
 var
   Data: string;
   I: Integer;
   Item: TObject;
 begin
+  JsonWriteBeginArray(ATarget);
   for I := 0 to ASource.Count - 1 do
   begin
-    Data := Format('List.Index=%d'+CRLF, [I]);
-    ATarget.WriteBuffer(Data[1], Length(Data));
     Item := TObject(ASource.Items[I]);
     MapperManager.Map(Item, ATarget);
+    if I + 1 < ASource.Count then
+      JsonWriteSeparator(ATarget);
   end;
+  JsonWriteEndArray(ATarget);
 end;
 
 procedure StreamAddressMapperHandler(ASource: TAddress; ATarget: TStream);
 var
   Data: string;
 begin
-  Data := Format('Address.Region=%s'+CRLF, [ASource.Region]);
-  ATarget.WriteBuffer(Data[1], Length(Data));
-  Data := Format('Address.City=%s'+CRLF, [ASource.City]);
-  ATarget.WriteBuffer(Data[1], Length(Data));
-  Data := Format('Address.Street='+CRLF, [ASource.Street]);
-  ATarget.WriteBuffer(Data[1], Length(Data));
+  JsonWriteBeginObject(ATarget);
+  JsonWriteProperty(ATarget, 'Region', ASource.Region, True);
+  JsonWriteProperty(ATarget, 'City', ASource.City, True);
+  JsonWriteProperty(ATarget, 'Street', ASource.Street, False);
+  JsonWriteEndObject(ATarget);
 end;
 
 procedure StreamContactMapperHandler(ASource: TContact; ATarget: TStream);
-var
-  Data: string;
 begin
-  Data := Format('Contact.Kind=%s'+CRLF, [ContactKindNames[ASource.Kind]]);
-  ATarget.WriteBuffer(Data[1], Length(Data));
-  Data := Format('Contact.Value=%s'+CRLF, [ASource.Value]);
-  ATarget.WriteBuffer(Data[1], Length(Data));
+  JsonWriteBeginObject(ATarget);
+  JsonWriteProperty(ATarget, 'Kind', ContactKindNames[ASource.Kind], True);
+  JsonWriteProperty(ATarget, 'Value', ASource.Value, False);
+  JsonWriteEndObject(ATarget);
 end;
 
 procedure StreamPersonMapperHandler(ASource: TPerson; ATarget: TStream);
-var
-  Data: string;
 begin
-  Data := Format('Person.Name=%s'+CRLF, [ASource.Name]);
-  ATarget.WriteBuffer(Data[1], Length(Data));
-  MapperManager.Map(ASource.Address, ATarget);
-  MapperManager.Map(ASource.Contacts, ATarget);
+  JsonWriteBeginObject(ATarget);
+  JsonWriteProperty(ATarget, 'Name', ASource.Name, True);
+  JsonWriteProperty(ATarget, 'Address', ASource.Address, True);
+  JsonWriteProperty(ATarget, 'Contacts', ASource.Contacts, False);
+  JsonWriteEndObject(ATarget);
 end;
 
 initialization
