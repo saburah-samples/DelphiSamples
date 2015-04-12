@@ -10,8 +10,11 @@ uses
 
 type
   TMainForm = class(TForm)
-    btnTestPersonMapping: TButton;
-    procedure btnTestPersonMappingClick(Sender: TObject);
+    btnTestObjectPersonMapping: TButton;
+    btnTestStreamPersonMapping: TButton;
+    memStreamPersonMappingResult: TMemo;
+    procedure btnTestObjectPersonMappingClick(Sender: TObject);
+    procedure btnTestStreamPersonMappingClick(Sender: TObject);
   private
     { Private declarations }
     FPerson: TPerson;
@@ -47,7 +50,7 @@ begin
   MapperManager.Map(Value, FPerson);
 end;
 
-procedure TMainForm.btnTestPersonMappingClick(Sender: TObject);
+procedure TMainForm.btnTestObjectPersonMappingClick(Sender: TObject);
 var
   Address: TAddress;
   Contacts: TList;
@@ -94,6 +97,20 @@ begin
     Person.Free;
   end;
   MessageDlg('Person Mapping Done', mtInformation, [mbOK], 0);
+end;
+
+procedure TMainForm.btnTestStreamPersonMappingClick(Sender: TObject);
+var
+  Stream: TStream;
+begin
+  Stream := TMemoryStream.Create;
+  try
+    MapperManager.Map(Person, Stream);
+    Stream.Position := 0;
+    memStreamPersonMappingResult.Lines.LoadFromStream(Stream);
+  finally
+    FreeAndNil(Stream)
+  end;
 end;
 
 end.
