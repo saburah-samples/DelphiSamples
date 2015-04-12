@@ -11,27 +11,44 @@ type
   // MapperManager
   //
 
+  IMapper = interface
+    procedure Map(ASource, ATarget: TObject); overload;
+    function Map(ASource: TObject; ATarget: TClass): TObject; overload;
+  end;
+
+  TCustomMapper = class(TInterfacedObject, IMapper)
+  protected
+    procedure DoMap(ASource, ATarget: TObject); virtual; abstract;
+    function CreateTarget(ATargetClass: TClass): TObject; virtual; abstract;
+    function GetSourceClass: TClass; virtual; abstract;
+    function GetTargetClass: TClass; virtual; abstract;
+  public
+    property SourceClass: TClass read GetSourceClass;
+    property TargetClass: TClass read GetTargetClass;
+
+    procedure Map(ASource, ATarget: TObject); overload;
+    function Map(ASource: TObject; ATargetClass: TClass): TObject; overload;
+  end;
+
   TMapperHandlerProc = procedure (ASource, ATarget: TObject);
 
-  TMapper = class
+  TMapper = class(TCustomMapper)
   private
     FSourceClass: TClass;
     FTargetClass: TClass;
     FHandler: TMapperHandlerProc;
   protected
-    procedure DoMap(ASource, ATarget: TObject); virtual;
+    procedure DoMap(ASource, ATarget: TObject); override;
+    function CreateTarget(ATargetClass: TClass): TObject; override;
+    function GetSourceClass: TClass; override;
+    function GetTargetClass: TClass; override;
   public
     constructor Create(ASourceClass, ATargetClass: TClass; AHandler: TMapperHandlerProc); virtual;
 
-    function Map(ASource: TObject; ATargetClass: TClass): TObject; overload;
-    procedure Map(ASource: TObject; ATarget: TObject); overload;
-
-    property SourceClass: TClass read FSourceClass;
-    property TargetClass: TClass read FTargetClass;
     property Handler: TMapperHandlerProc read FHandler;
   end;
 
-  TMapperManager = class
+  TMapperManager = class(TInterfacedObject, IMapper)
   private
     FMappers: TList;
     function GetMapper(Index: Integer): TMapper;
@@ -68,6 +85,19 @@ begin
   Result := FMapperManager;
 end;
 
+{ TCustomMapper }
+
+procedure TCustomMapper.Map(ASource, ATarget: TObject);
+begin
+  DoMap(ASource, ATarget);
+end;
+
+function TCustomMapper.Map(ASource: TObject; ATargetClass: TClass): TObject;
+begin
+  Result := CreateTarget(ATargetClass);
+  Map(ASource, Result);
+end;
+
 { TMapper }
 
 constructor TMapper.Create(ASourceClass, ATargetClass: TClass; AHandler: TMapperHandlerProc);
@@ -78,21 +108,25 @@ begin
   FHandler := AHandler;
 end;
 
-function TMapper.Map(ASource: TObject; ATargetClass: TClass): TObject;
+function TMapper.CreateTarget(ATargetClass: TClass): TObject;
 begin
   Result := ATargetClass.Create;
-  DoMap(ASource, Result);
-end;
-
-procedure TMapper.Map(ASource, ATarget: TObject);
-begin
-  DoMap(ASource, ATarget);
 end;
 
 procedure TMapper.DoMap(ASource: TObject; ATarget: TObject);
 begin
   if Assigned(FHandler) then
     FHandler(ASource, ATarget);
+end;
+
+function TMapper.GetSourceClass: TClass;
+begin
+  Result := FSourceClass;
+end;
+
+function TMapper.GetTargetClass: TClass;
+begin
+  Result := FTargetClass;
 end;
 
 { TMapperManager }
