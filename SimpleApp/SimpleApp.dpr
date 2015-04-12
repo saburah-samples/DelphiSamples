@@ -5,7 +5,7 @@ uses
   saMainForm in 'saMainForm.pas' {MainForm},
   Mapping in '..\Mapping\Mapping.pas',
   PersonMapping in '..\Mapping\PersonMapping.pas',
-  PersonModule in '..\Mapping\PersonModule.pas';
+  PersonModule in '..\Modules\PersonModule.pas';
 
 {$R *.res}
 
